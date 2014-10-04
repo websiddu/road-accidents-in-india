@@ -1,0 +1,13 @@
+{
+  "name": "killer-roads",
+  "private": true,
+  "dependencies": {
+    "bootstrap": "~3.2.0",
+    "d3": "~3.4.11",
+    "angular": "~1.2.26",
+    "datamaps": "~0.3.4",
+    "underscore": "~1.7.0",
+    "pleasejs": "~0.3.0",
+    "nvd3": "~1.1.15-beta"
+  }
+}
