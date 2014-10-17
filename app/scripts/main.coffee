@@ -5,15 +5,19 @@ window.KR = do ->
   accidents_in_2012 = []
   accidentsSplitYear = []
   accidentsSplit = []
+  isLoaded = false
+  type = 'per_lakh'
+  accidents_in_2012_total = []
 
   colors = [
-    "#FFE4D9"
-    "#fcbba1"
-    "#fc9272"
-    "#fb6a4a"
-    "#ef3b2c"
-    "#cb181d"
-    "#99000d"
+    "#ffffcc"
+    "#ffeda0"
+    "#fed976"
+    "#feb24c"
+    "#fd8d3c"
+    "#fc4e2a"
+    "#e31a1c"
+    "#b10026"
   ]
 
   featureOptions = [
@@ -52,9 +56,11 @@ window.KR = do ->
 
   _init = ->
     _initMap()
+    _gotoViz()
 
   _hideLoader = ->
-    $('.loader').fadeOut(-> $(this).remove())
+    if $('.intro').length is 0
+      $('.loader').remove()
 
   _showLoader = ->
     $('.loader').fadeIn(1000)
@@ -63,6 +69,15 @@ window.KR = do ->
     $('.legend').removeClass('hide').addClass('fadeInUpBig')
     $('.details').removeClass('hide').addClass('fadeInRightBig')
     $('header').removeClass('hide').addClass('fadeInDownBig')
+
+  _gotoViz = ->
+    $('#gotoviz').on 'click', (e) ->
+      if isLoaded is true
+        $('.loader').remove()
+      else
+        $('.intro').remove()
+        $('.inner-loader').removeClass('hide')
+
 
   _initMap = ->
     map = new google.maps.Map(document.getElementById("map"),
@@ -87,12 +102,14 @@ window.KR = do ->
     customMapType = new google.maps.StyledMapType(featureOptions,
       name: "Jass"
     )
+
     map.mapTypes.set "custom", customMapType
     map.data.setStyle _styleFeature
 
     google.maps.event.addListenerOnce map.data, "addfeature", ->
       _loadAccidents2012Data()
       _loadSplitData()
+      isLoaded = true
       _hideLoader()
       _showContent()
       # google.maps.event.trigger(map.data, 'click');
@@ -102,17 +119,17 @@ window.KR = do ->
     $('.legend-list li').removeClass('active')
 
   _handleClickOnState = (event) ->
-    map.data.revertStyle() if event.feature.getProperty "state" is "active"
-    event.feature.setProperty "state", "active"
+    map.data.revertStyle()
+    map.data.overrideStyle(event.feature, {fillColor: 'red', strokeColor: 'white', strokeWeight: 2})
     _handleMouseOver(event)
 
   _handleMouseOver = (event) ->
-    currentState = if event isnt null then event.feature.getProperty('NAME_1') else 'Andhra Pradesh'
-    accidentsIn2012 = if event isnt null then event.feature.getProperty('value') else accidents_in_2012[0]
-    range = _getRange(accidentsIn2012)
+    currentState = event.feature.getProperty('NAME_1')
+    accidentsIn2012 = event.feature.getProperty(type)
+    range = _getColor(accidentsIn2012)
     _clearHighlight()
-    $(".legend-list li:nth-child(#{range + 1})").addClass('active')
-    event.feature.setProperty "state", "hover" if event isnt null
+    $(".legend-list li:nth-child(#{range})").addClass('active')
+    # event.feature.setProperty "state", "hover" if event isnt null
     $('.state-name').text(currentState)
     $('.accidents_2012').text(accidentsIn2012)
     _loadLineChart(currentState)
@@ -168,66 +185,45 @@ window.KR = do ->
 
             ]
           }
-        _handleMouseOver(null)
+        # _handleMouseOver(null)
 
   _loadAccidents2012Data = ->
     $.ajax
-      url: "data/total-accidents-2003-2012.json"
+      url: "data/total-accidents-2009-2012.json"
       dataType: "JSON"
       success: (response) ->
         response.data.forEach (item) ->
           state = map.data.getFeatureById($.trim(item[0]) + "")
-          state.setProperty "value", parseInt(item[1])
-          accidents_in_2012.push item[1]
+          state.setProperty "per_lakh", parseFloat(item[8])
+          state.setProperty "total", parseFloat(item[4])
+          accidents_in_2012.push parseFloat(item[8])
+          accidents_in_2012_total.push parseInt(item[4])
           accidentsSplitYear[$.trim(item[0])] = {
             total: [
               {
                 key: "Total Accidents"
                 values: [
                   {
-                    x: "2003"
-                    y: parseInt(item[1])
-                  }
-                  {
-                    x: "2004"
-                    y: parseInt(item[2])
-                  }
-                  {
-                    x: "2005"
-                    y: parseInt(item[3])
-                  }
-                  {
-                    x: "2006"
-                    y: parseInt(item[4])
-                  }
-                  {
-                    x: "2007"
-                    y: parseInt(item[5])
-                  }
-                  {
-                    x: "2008"
-                    y: parseInt(item[6])
-                  }
-                  {
                     x: "2009"
-                    y: parseInt(item[7])
+                    y: parseFloat(item[5])
                   }
                   {
                     x: "2010"
-                    y: parseInt(item[8])
+                    y: parseFloat(item[6])
                   }
                   {
                     x: "2011"
-                    y: parseInt(item[9])
+                    y: parseFloat(item[7])
                   }
                   {
                     x: "2012"
-                    y: parseInt(item[10])
+                    y: parseFloat(item[8])
                   }
                 ]
               }
             ]
           }
+        generateScale()
 
   _loadPieChart = (state) ->
     nv.addGraph ->
@@ -240,15 +236,10 @@ window.KR = do ->
         .tooltipContent( (key, y, e, graph) ->
           "<h3>#{key}</h3> <p>#{y}</p>"
         )
-
-      # chart.pie.pieLabelsOutside(false).labelType("percent");
-
       d3.select("#detailedSplitChart svg").datum(accidentsSplit[state].values).call chart #Finally, render the chart!
       nv.utils.windowResize ->
         chart.update()
         return
-
-      # d3.select(".nv-legendWrap").attr("transform", "translate(100,100)")
       chart
 
 
@@ -268,31 +259,11 @@ window.KR = do ->
         return
       chart
 
-  _loadYearlyData = ->
-
-
-  _getRange = (value) ->
-    range = 0
-    if value > 0 and value < 500
-      range = 0
-    else if value > 500 and value < 3000
-      range = 1
-    else if value > 3000 and value < 6000
-      range = 2
-    else if value > 6000 and value < 12000
-      range = 3
-    else if value > 12000 and value < 24000
-      range = 4
-    else if value > 24000 and value < 48000
-      range = 5
-    else range = 6  if value > 48000 and value < 70000
-
-    return range
 
   _styleFeature = (feature) ->
     # determine whether to show this shape or not
     showRow = true
-    showRow = false  if not feature.getProperty("value")? or isNaN(feature.getProperty("value"))
+    showRow = false  if not feature.getProperty(type)? or isNaN(feature.getProperty(type))
     outlineWeight = 0.5
     zIndex = 1
     if feature.getProperty("state") is "hover"
@@ -305,9 +276,33 @@ window.KR = do ->
     strokeWeight: outlineWeight
     strokeColor: "#fff"
     zIndex: zIndex
-    fillColor: colors[_getRange(feature.getProperty("value"))]
+    fillColor: colors[_getColor(feature.getProperty(type))]
     fillOpacity: 0.9
-    visible: showRow
+    #visible: showRow
+
+  _getColor = (value) ->
+    color = d3.scale.quantile().domain(accidents_in_2012).range(d3.range(8))(value)
+    parseInt(color)
+
+  _getRange = ->
+    d3.scale.quantile().domain(accidents_in_2012).range(d3.range(8)).quantiles()
+
+  getColors: ->
+    return colors
+
+  generateScale = ->
+    i = 0
+    range = _getRange()
+    lis = ''
+    while i < range.length
+      li = """
+        <li class='legend-list-item'>
+          <span class='color' style='background-color: #{colors[i]}'> </span>
+          <span> #{parseFloat(range[i-1] || 0.00).toFixed(4)} - #{parseFloat(range[i]).toFixed(4)} </span>
+        </li>
+      """
+      $('.legend-list').append($(li))
+      i++
 
   init: ->
     _init()

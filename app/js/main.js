@@ -1,12 +1,15 @@
 (function() {
   'use strict';
   window.KR = (function() {
-    var accidentsSplit, accidentsSplitYear, accidents_in_2012, colors, featureOptions, map, _clearHighlight, _getRange, _handleClickOnState, _handleClickOutState, _handleMouseOver, _hideLoader, _init, _initEventListners, _initMap, _loadAccidents2012Data, _loadLineChart, _loadPieChart, _loadSplitData, _loadYearlyData, _showContent, _showLoader, _styleFeature;
+    var accidentsSplit, accidentsSplitYear, accidents_in_2012, accidents_in_2012_total, colors, featureOptions, generateScale, isLoaded, map, type, _clearHighlight, _getColor, _getRange, _gotoViz, _handleClickOnState, _handleClickOutState, _handleMouseOver, _hideLoader, _init, _initEventListners, _initMap, _loadAccidents2012Data, _loadLineChart, _loadPieChart, _loadSplitData, _showContent, _showLoader, _styleFeature;
     map = null;
     accidents_in_2012 = [];
     accidentsSplitYear = [];
     accidentsSplit = [];
-    colors = ["#FFE4D9", "#fcbba1", "#fc9272", "#fb6a4a", "#ef3b2c", "#cb181d", "#99000d"];
+    isLoaded = false;
+    type = 'per_lakh';
+    accidents_in_2012_total = [];
+    colors = ["#ffffcc", "#ffeda0", "#fed976", "#feb24c", "#fd8d3c", "#fc4e2a", "#e31a1c", "#b10026"];
     featureOptions = [
       {
         elementType: "geometry",
@@ -42,12 +45,13 @@
       }
     ];
     _init = function() {
-      return _initMap();
+      _initMap();
+      return _gotoViz();
     };
     _hideLoader = function() {
-      return $('.loader').fadeOut(function() {
-        return $(this).remove();
-      });
+      if ($('.intro').length === 0) {
+        return $('.loader').remove();
+      }
     };
     _showLoader = function() {
       return $('.loader').fadeIn(1000);
@@ -56,6 +60,16 @@
       $('.legend').removeClass('hide').addClass('fadeInUpBig');
       $('.details').removeClass('hide').addClass('fadeInRightBig');
       return $('header').removeClass('hide').addClass('fadeInDownBig');
+    };
+    _gotoViz = function() {
+      return $('#gotoviz').on('click', function(e) {
+        if (isLoaded === true) {
+          return $('.loader').remove();
+        } else {
+          $('.intro').remove();
+          return $('.inner-loader').removeClass('hide');
+        }
+      });
     };
     _initMap = function() {
       var customMapType;
@@ -82,6 +96,7 @@
       return google.maps.event.addListenerOnce(map.data, "addfeature", function() {
         _loadAccidents2012Data();
         _loadSplitData();
+        isLoaded = true;
         _hideLoader();
         _showContent();
       });
@@ -90,22 +105,21 @@
       return $('.legend-list li').removeClass('active');
     };
     _handleClickOnState = function(event) {
-      if (event.feature.getProperty("state" === "active")) {
-        map.data.revertStyle();
-      }
-      event.feature.setProperty("state", "active");
+      map.data.revertStyle();
+      map.data.overrideStyle(event.feature, {
+        fillColor: 'red',
+        strokeColor: 'white',
+        strokeWeight: 2
+      });
       return _handleMouseOver(event);
     };
     _handleMouseOver = function(event) {
       var accidentsIn2012, currentState, range;
-      currentState = event !== null ? event.feature.getProperty('NAME_1') : 'Andhra Pradesh';
-      accidentsIn2012 = event !== null ? event.feature.getProperty('value') : accidents_in_2012[0];
-      range = _getRange(accidentsIn2012);
+      currentState = event.feature.getProperty('NAME_1');
+      accidentsIn2012 = event.feature.getProperty(type);
+      range = _getColor(accidentsIn2012);
       _clearHighlight();
-      $(".legend-list li:nth-child(" + (range + 1) + ")").addClass('active');
-      if (event !== null) {
-        event.feature.setProperty("state", "hover");
-      }
+      $(".legend-list li:nth-child(" + range + ")").addClass('active');
       $('.state-name').text(currentState);
       $('.accidents_2012').text(accidentsIn2012);
       _loadLineChart(currentState);
@@ -123,7 +137,7 @@
         url: "data/accident-cause-2012.json",
         dataType: "JSON",
         success: function(response) {
-          response.data.forEach(function(item) {
+          return response.data.forEach(function(item) {
             state = map.data.getFeatureById($.trim(item[0]) + "");
             return accidentsSplit[$.trim(item[0]) + ""] = {
               key: $.trim(item[0]) + "",
@@ -153,61 +167,45 @@
               ]
             };
           });
-          return _handleMouseOver(null);
         }
       });
     };
     _loadAccidents2012Data = function() {
       return $.ajax({
-        url: "data/total-accidents-2003-2012.json",
+        url: "data/total-accidents-2009-2012.json",
         dataType: "JSON",
         success: function(response) {
-          return response.data.forEach(function(item) {
+          response.data.forEach(function(item) {
             var state;
             state = map.data.getFeatureById($.trim(item[0]) + "");
-            state.setProperty("value", parseInt(item[1]));
-            accidents_in_2012.push(item[1]);
+            state.setProperty("per_lakh", parseFloat(item[8]));
+            state.setProperty("total", parseFloat(item[4]));
+            accidents_in_2012.push(parseFloat(item[8]));
+            accidents_in_2012_total.push(parseInt(item[4]));
             return accidentsSplitYear[$.trim(item[0])] = {
               total: [
                 {
                   key: "Total Accidents",
                   values: [
                     {
-                      x: "2003",
-                      y: parseInt(item[1])
-                    }, {
-                      x: "2004",
-                      y: parseInt(item[2])
-                    }, {
-                      x: "2005",
-                      y: parseInt(item[3])
-                    }, {
-                      x: "2006",
-                      y: parseInt(item[4])
-                    }, {
-                      x: "2007",
-                      y: parseInt(item[5])
-                    }, {
-                      x: "2008",
-                      y: parseInt(item[6])
-                    }, {
                       x: "2009",
-                      y: parseInt(item[7])
+                      y: parseFloat(item[5])
                     }, {
                       x: "2010",
-                      y: parseInt(item[8])
+                      y: parseFloat(item[6])
                     }, {
                       x: "2011",
-                      y: parseInt(item[9])
+                      y: parseFloat(item[7])
                     }, {
                       x: "2012",
-                      y: parseInt(item[10])
+                      y: parseFloat(item[8])
                     }
                   ]
                 }
               ]
             };
           });
+          return generateScale();
         }
       });
     };
@@ -241,33 +239,10 @@
         return chart;
       });
     };
-    _loadYearlyData = function() {};
-    _getRange = function(value) {
-      var range;
-      range = 0;
-      if (value > 0 && value < 500) {
-        range = 0;
-      } else if (value > 500 && value < 3000) {
-        range = 1;
-      } else if (value > 3000 && value < 6000) {
-        range = 2;
-      } else if (value > 6000 && value < 12000) {
-        range = 3;
-      } else if (value > 12000 && value < 24000) {
-        range = 4;
-      } else if (value > 24000 && value < 48000) {
-        range = 5;
-      } else {
-        if (value > 48000 && value < 70000) {
-          range = 6;
-        }
-      }
-      return range;
-    };
     _styleFeature = function(feature) {
       var outlineWeight, showRow, strokeColor, zIndex;
       showRow = true;
-      if ((feature.getProperty("value") == null) || isNaN(feature.getProperty("value"))) {
+      if ((feature.getProperty(type) == null) || isNaN(feature.getProperty(type))) {
         showRow = false;
       }
       outlineWeight = 0.5;
@@ -285,10 +260,35 @@
         strokeWeight: outlineWeight,
         strokeColor: "#fff",
         zIndex: zIndex,
-        fillColor: colors[_getRange(feature.getProperty("value"))],
-        fillOpacity: 0.9,
-        visible: showRow
+        fillColor: colors[_getColor(feature.getProperty(type))],
+        fillOpacity: 0.9
       };
+    };
+    _getColor = function(value) {
+      var color;
+      color = d3.scale.quantile().domain(accidents_in_2012).range(d3.range(8))(value);
+      return parseInt(color);
+    };
+    _getRange = function() {
+      return d3.scale.quantile().domain(accidents_in_2012).range(d3.range(8)).quantiles();
+    };
+    ({
+      getColors: function() {
+        return colors;
+      }
+    });
+    generateScale = function() {
+      var i, li, lis, range, _results;
+      i = 0;
+      range = _getRange();
+      lis = '';
+      _results = [];
+      while (i < range.length) {
+        li = "<li class='legend-list-item'>\n  <span class='color' style='background-color: " + colors[i] + "'> </span>\n  <span> " + (parseFloat(range[i - 1] || 0.00).toFixed(4)) + " - " + (parseFloat(range[i]).toFixed(4)) + " </span>\n</li>";
+        $('.legend-list').append($(li));
+        _results.push(i++);
+      }
+      return _results;
     };
     return {
       init: function() {
