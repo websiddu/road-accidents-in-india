@@ -6,18 +6,18 @@ window.KR = do ->
   accidentsSplitYear = []
   accidentsSplit = []
   isLoaded = false
-  type = 'per_lakh'
-  accidents_in_2012_total = []
+  infoWindow = new google.maps.InfoWindow
+    content: ""
 
   colors = [
-    "#ffffcc"
-    "#ffeda0"
-    "#fed976"
-    "#feb24c"
-    "#fd8d3c"
-    "#fc4e2a"
-    "#e31a1c"
-    "#b10026"
+    "#fcfbfd"
+    "#efedf5"
+    "#dadaeb"
+    "#bcbddc"
+    "#9e9ac8"
+    "#807dba"
+    "#6a51a3"
+    "#4a1486"
   ]
 
   featureOptions = [
@@ -120,18 +120,20 @@ window.KR = do ->
 
   _handleClickOnState = (event) ->
     map.data.revertStyle()
-    map.data.overrideStyle(event.feature, {fillColor: 'red', strokeColor: 'white', strokeWeight: 2})
+    map.data.overrideStyle(event.feature, {fillColor: 'red', strokeColor: 'white', strokeWeight: 3})
     _handleMouseOver(event)
 
   _handleMouseOver = (event) ->
     currentState = event.feature.getProperty('NAME_1')
-    accidentsIn2012 = event.feature.getProperty(type)
+    accidentsIn2012 = event.feature.getProperty('value')
+    accidentsIn2012Total = event.feature.getProperty('total_accidents')
     range = _getColor(accidentsIn2012)
     _clearHighlight()
     $(".legend-list li:nth-child(#{range})").addClass('active')
     # event.feature.setProperty "state", "hover" if event isnt null
     $('.state-name').text(currentState)
     $('.accidents_2012').text(accidentsIn2012)
+    $('.accidents_2012_total').text(accidentsIn2012Total)
     _loadLineChart(currentState)
     _loadPieChart(currentState)
 
@@ -140,9 +142,21 @@ window.KR = do ->
     _clearHighlight()
 
   _initEventListners = ->
-    # map.data.addListener "mouseover", _handleMouseOver
+    # map.data.addListener "mouseover", _showToolTip
     map.data.addListener 'click', _handleClickOnState
-    # map.data.addListener 'mouseout', _handleClickOutState
+    map.data.addListener 'mouseout', _hideToolTip
+
+  _hideToolTip = ->
+    # map.data.revertStyle()
+
+  _showToolTip = (event) ->
+    map.data.overrideStyle(event.feature, {strokeColor: 'white', strokeWeight: 2})
+    infoWindow.setContent "supberb awesome cooll sutff..."
+
+    anchor = new google.maps.MVCObject()
+    anchor.set("position", event.latLng)
+
+    infoWindow.open(map, anchor)
 
   _loadSplitData = (state) ->
     $.ajax
@@ -151,41 +165,41 @@ window.KR = do ->
       success: (response) ->
         response.data.forEach (item) ->
           state = map.data.getFeatureById($.trim(item[0]) + "")
-          accidentsSplit[$.trim(item[0]) + ""] = {
-            key: $.trim(item[0]) + ""
-            values: [
-              {
-                label: "Fault of Driver"
-                value: item[1]
-              }
-              {
-                label: "Fault of Cyclist"
-                value: item[4]
-              }
-              {
-                label: "Fault of Pedestrian"
-                value: item[7]
-              }
-              {
-                label: "Condition of Motor Vehicle"
-                value: item[10]
-              }
-              {
-                label: "Defect in Road Condition"
-                value: item[13]
-              }
-              {
-                label: "Weather Condition"
-                value: item[16]
-              }
-              {
-                label: "Other Causes"
-                value: item[19]
-              }
+          _updatedAccidentsCause(item)
 
-            ]
-          }
-        # _handleMouseOver(null)
+  _updatedAccidentsCause = (item) ->
+    accidentsSplit[$.trim(item[0]) + ""] =
+      key: $.trim(item[0]) + ""
+      values: [
+        {
+          label: "Fault of Driver"
+          value: item[1]
+        }
+        {
+          label: "Fault of Cyclist"
+          value: item[4]
+        }
+        {
+          label: "Fault of Pedestrian"
+          value: item[7]
+        }
+        {
+          label: "Condition of Motor Vehicle"
+          value: item[10]
+        }
+        {
+          label: "Defect in Road Condition"
+          value: item[13]
+        }
+        {
+          label: "Weather Condition"
+          value: item[16]
+        }
+        {
+          label: "Other Causes"
+          value: item[19]
+        }
+      ]
 
   _loadAccidents2012Data = ->
     $.ajax
@@ -194,36 +208,79 @@ window.KR = do ->
       success: (response) ->
         response.data.forEach (item) ->
           state = map.data.getFeatureById($.trim(item[0]) + "")
-          state.setProperty "per_lakh", parseFloat(item[8])
-          state.setProperty "total", parseFloat(item[4])
+          state.setProperty "value", parseFloat(item[8])
+          state.setProperty 'total_accidents', parseInt(item[1])
           accidents_in_2012.push parseFloat(item[8])
-          accidents_in_2012_total.push parseInt(item[4])
-          accidentsSplitYear[$.trim(item[0])] = {
-            total: [
-              {
-                key: "Total Accidents"
-                values: [
-                  {
-                    x: "2009"
-                    y: parseFloat(item[5])
-                  }
-                  {
-                    x: "2010"
-                    y: parseFloat(item[6])
-                  }
-                  {
-                    x: "2011"
-                    y: parseFloat(item[7])
-                  }
-                  {
-                    x: "2012"
-                    y: parseFloat(item[8])
-                  }
-                ]
-              }
-            ]
-          }
+          _updatedAccidentsPerYear(item)
         generateScale()
+
+  _updatedAccidentsPerYear = (item) ->
+    accidentsSplitYear[$.trim(item[0])] =
+      total: [
+        {
+          key: "Total Accidents"
+          values: [
+            {
+              x: "2009"
+              y: parseFloat(item[1])
+            }
+            {
+              x: "2010"
+              y: parseFloat(item[2])
+            }
+            {
+              x: "2011"
+              y: parseFloat(item[3])
+            }
+            {
+              x: "2012"
+              y: parseFloat(item[4])
+            }
+          ]
+        }
+      ]
+
+  _styleFeature = (feature) ->
+    # determine whether to show this shape or not
+    showRow = true
+    showRow = false  if not feature.getProperty("value")? or isNaN(feature.getProperty("value"))
+    outlineWeight = 0.5
+    zIndex = 1
+    if feature.getProperty("state") is "hover"
+      outlineWeight = 1.5
+      zIndex = 2
+    if feature.getProperty('state') is "active"
+      outlineWeight = 1.5
+      zIndex = 2
+      strokeColor = "#000"
+    strokeWeight: outlineWeight
+    strokeColor: "#fff"
+    zIndex: zIndex
+    fillColor: colors[_getColor(feature.getProperty('value'))]
+    fillOpacity: 0.9
+    visible: showRow
+
+
+  _getColor = (value) ->
+    color = d3.scale.quantile().domain(accidents_in_2012).range(d3.range(8))(value)
+    parseInt(color)
+
+  _getRange = ->
+    d3.scale.quantile().domain(accidents_in_2012).range(d3.range(8)).quantiles()
+
+  generateScale = ->
+    i = 0
+    range = _getRange()
+    lis = ''
+    while i < range.length
+      li = """
+        <li class='legend-list-item'>
+          <span class='color' style='background-color: #{colors[i]}'> </span>
+          <span> #{parseFloat(range[i-1] || 0.00).toFixed(4)} - #{parseFloat(range[i]).toFixed(4)} </span>
+        </li>
+      """
+      $('.legend-list').append($(li))
+      i++
 
   _loadPieChart = (state) ->
     nv.addGraph ->
@@ -258,51 +315,6 @@ window.KR = do ->
         chart.update()
         return
       chart
-
-
-  _styleFeature = (feature) ->
-    # determine whether to show this shape or not
-    showRow = true
-    showRow = false  if not feature.getProperty(type)? or isNaN(feature.getProperty(type))
-    outlineWeight = 0.5
-    zIndex = 1
-    if feature.getProperty("state") is "hover"
-      outlineWeight = 1.5
-      zIndex = 2
-    if feature.getProperty('state') is "active"
-      outlineWeight = 1.5
-      zIndex = 2
-      strokeColor = "#000"
-    strokeWeight: outlineWeight
-    strokeColor: "#fff"
-    zIndex: zIndex
-    fillColor: colors[_getColor(feature.getProperty(type))]
-    fillOpacity: 0.9
-    #visible: showRow
-
-  _getColor = (value) ->
-    color = d3.scale.quantile().domain(accidents_in_2012).range(d3.range(8))(value)
-    parseInt(color)
-
-  _getRange = ->
-    d3.scale.quantile().domain(accidents_in_2012).range(d3.range(8)).quantiles()
-
-  getColors: ->
-    return colors
-
-  generateScale = ->
-    i = 0
-    range = _getRange()
-    lis = ''
-    while i < range.length
-      li = """
-        <li class='legend-list-item'>
-          <span class='color' style='background-color: #{colors[i]}'> </span>
-          <span> #{parseFloat(range[i-1] || 0.00).toFixed(4)} - #{parseFloat(range[i]).toFixed(4)} </span>
-        </li>
-      """
-      $('.legend-list').append($(li))
-      i++
 
   init: ->
     _init()
