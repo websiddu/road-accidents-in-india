@@ -1,7 +1,7 @@
 (function() {
   'use strict';
   window.KR = (function() {
-    var accidentsSplit, accidentsSplitYear, accidents_in_2012, colors, featureOptions, generateScale, infoWindow, isLoaded, map, _clearHighlight, _getColor, _getRange, _gotoViz, _handleClickOnState, _handleClickOutState, _handleMouseOver, _hideLoader, _hideToolTip, _init, _initEventListners, _initMap, _loadAccidents2012Data, _loadLineChart, _loadPieChart, _loadSplitData, _showContent, _showLoader, _showToolTip, _styleFeature, _updatedAccidentsCause, _updatedAccidentsPerYear;
+    var accidentsSplit, accidentsSplitYear, accidents_in_2012, colors, featureOptions, generateScale, infoWindow, isLoaded, map, _clearHighlight, _getColor, _getRange, _gotoViz, _handleClickOnState, _handleClickOutState, _handleMouseOver, _hideLoader, _hideToolTip, _init, _initEventListners, _initMap, _loadAccidents2012Data, _loadLineChart, _loadPieChart, _loadSplitData, _setDisableStyle, _showContent, _showLoader, _showToolTip, _styleFeature, _updatedAccidentsCause, _updatedAccidentsPerYear;
     map = null;
     accidents_in_2012 = [];
     accidentsSplitYear = [];
@@ -106,13 +106,24 @@
       return $('.legend-list li').removeClass('active');
     };
     _handleClickOnState = function(event) {
-      map.data.revertStyle();
-      map.data.overrideStyle(event.feature, {
-        fillColor: 'red',
-        strokeColor: 'white',
-        strokeWeight: 3
-      });
-      return _handleMouseOver(event);
+      if (!event.feature.getProperty('state')) {
+        map.data.forEach(function(_feature) {
+          return _feature.removeProperty('state');
+        });
+        map.data.setStyle(_setDisableStyle);
+        map.data.revertStyle();
+        map.data.overrideStyle(event.feature, {
+          fillOpacity: 1,
+          strokeWeight: 2,
+          strokeColor: '#000'
+        });
+        _handleMouseOver(event);
+        return event.feature.setProperty("state", "active");
+      } else {
+        map.data.setStyle(_styleFeature);
+        map.data.revertStyle();
+        event.feature.removeProperty("state");
+      }
     };
     _handleMouseOver = function(event) {
       var accidentsIn2012, accidentsIn2012Total, currentState, range;
@@ -230,6 +241,20 @@
         ]
       };
     };
+    _setDisableStyle = function(feature) {
+      var showRow;
+      showRow = true;
+      if ((feature.getProperty("value") == null) || isNaN(feature.getProperty("value"))) {
+        showRow = false;
+      }
+      return {
+        strokeWeight: 0.5,
+        strokeColor: "#fff",
+        fillColor: colors[_getColor(feature.getProperty('value'))],
+        fillOpacity: 0.5,
+        visible: showRow
+      };
+    };
     _styleFeature = function(feature) {
       var outlineWeight, showRow, strokeColor, zIndex;
       showRow = true;
@@ -308,6 +333,9 @@
       });
     };
     return {
+      map: function() {
+        return map;
+      },
       init: function() {
         _init();
         return true;

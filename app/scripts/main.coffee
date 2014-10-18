@@ -119,9 +119,21 @@ window.KR = do ->
     $('.legend-list li').removeClass('active')
 
   _handleClickOnState = (event) ->
-    map.data.revertStyle()
-    map.data.overrideStyle(event.feature, {fillColor: 'red', strokeColor: 'white', strokeWeight: 3})
-    _handleMouseOver(event)
+    unless event.feature.getProperty 'state'
+      map.data.forEach (_feature) ->
+        _feature.removeProperty('state')
+
+      map.data.setStyle _setDisableStyle
+      map.data.revertStyle()
+      map.data.overrideStyle(event.feature, {fillOpacity: 1, strokeWeight: 2, strokeColor: '#000'})
+      _handleMouseOver(event)
+
+      event.feature.setProperty "state", "active"
+    else
+      map.data.setStyle _styleFeature
+      map.data.revertStyle()
+      event.feature.removeProperty "state"
+      return
 
   _handleMouseOver = (event) ->
     currentState = event.feature.getProperty('NAME_1')
@@ -240,6 +252,16 @@ window.KR = do ->
         }
       ]
 
+  _setDisableStyle = (feature) ->
+    showRow = true
+    showRow = false  if not feature.getProperty("value")? or isNaN(feature.getProperty("value"))
+
+    strokeWeight: 0.5
+    strokeColor: "#fff"
+    fillColor: colors[_getColor(feature.getProperty('value'))]
+    fillOpacity: 0.5
+    visible: showRow
+
   _styleFeature = (feature) ->
     # determine whether to show this shape or not
     showRow = true
@@ -315,6 +337,9 @@ window.KR = do ->
         chart.update()
         return
       chart
+
+  map: ->
+    return map
 
   init: ->
     _init()
