@@ -5,6 +5,7 @@ window.KR = do ->
   accidents_in_2012 = []
   accidentsSplitYear = []
   accidentsSplit = []
+  accidentsVehicleType = []
   isLoaded = false
   infoWindow = new google.maps.InfoWindow
     content: ""
@@ -19,6 +20,7 @@ window.KR = do ->
     "#6a51a3"
     "#4a1486"
   ]
+
 
   featureOptions = [
     {
@@ -109,6 +111,7 @@ window.KR = do ->
     google.maps.event.addListenerOnce map.data, "addfeature", ->
       _loadAccidents2012Data()
       _loadSplitData()
+      _loadVehicleTypeData()
       isLoaded = true
       _hideLoader()
       _showContent()
@@ -125,7 +128,8 @@ window.KR = do ->
 
       map.data.setStyle _setDisableStyle
       map.data.revertStyle()
-      map.data.overrideStyle(event.feature, {fillOpacity: 1, strokeWeight: 2, strokeColor: '#000'})
+      color = colors[_getColor(event.feature.getProperty('value'))]
+      map.data.overrideStyle(event.feature, {fillOpacity: 1, strokeWeight: 2, strokeColor: '#fff', fillColor: color})
       _handleMouseOver(event)
 
       event.feature.setProperty "state", "active"
@@ -148,18 +152,27 @@ window.KR = do ->
     $('.accidents_2012_total').text(accidentsIn2012Total)
     _loadLineChart(currentState)
     _loadPieChart(currentState)
+    _loadBarChart(currentState)
 
   _handleClickOutState = (event) ->
     event.feature.setProperty "state", "normal"
     _clearHighlight()
 
   _initEventListners = ->
-    # map.data.addListener "mouseover", _showToolTip
+    map.data.addListener "mouseover", _highlightState
     map.data.addListener 'click', _handleClickOnState
-    map.data.addListener 'mouseout', _hideToolTip
+    map.data.addListener 'mouseout', _unHighlightState
 
-  _hideToolTip = ->
-    # map.data.revertStyle()
+
+
+  _highlightState = (event) ->
+    color = colors[_getColor(event.feature.getProperty('value'))]
+    map.data.overrideStyle(event.feature, {fillOpacity: 1, strokeWeight: 1, strokeColor: '#eee', fillColor: color})
+
+  _unHighlightState = (event) ->
+    unless event.feature.getProperty('state') is 'active'
+      map.data.revertStyle(event.feature)
+
 
   _showToolTip = (event) ->
     map.data.overrideStyle(event.feature, {strokeColor: 'white', strokeWeight: 2})
@@ -170,13 +183,61 @@ window.KR = do ->
 
     infoWindow.open(map, anchor)
 
-  _loadSplitData = (state) ->
+  _loadVehicleTypeData = (state) ->
+    $.ajax
+      url: "data/total-accidents-vehicle.json"
+      dataType: "JSON"
+      success: (response) ->
+        response.data.forEach (item) ->
+          _updatedVehicleType(item)
+
+  _updatedVehicleType = (item) ->
+    accidentsVehicleType[$.trim(item[0]) + ""] =
+      key: $.trim(item[0]) + ""
+      values: [
+        {
+          label: "Two-Wheelers"
+          icon: "bike.svg"
+          value: parseInt(item[1])
+        }
+        {
+          label: "Auto-Rickshaws"
+          icon: "auto.svg"
+          value: parseInt(item[5])
+        }
+        {
+          label: "Cars, Jeeps, Taxis"
+          icon: "car.svg"
+          value: parseInt(item[9])
+        }
+        {
+          label: "Buses"
+          icon: "buse.svg"
+          value: parseInt(item[13])
+        }
+        {
+          label: "Trucks, Tempos, MAVs, Tractors"
+          icon: "truck.svg"
+          value: parseInt(item[17])
+        }
+        {
+          label: "Other Motor Vehicles"
+          icon: "other.svg"
+          value: parseInt(item[21])
+        }
+        {
+          label: "Other Vehicles/Objects"
+          icons: "othreother.svg"
+          value: parseInt(item[25])
+        }
+      ]
+
+  _loadSplitData = ->
     $.ajax
       url: "data/accident-cause-2012.json"
       dataType: "JSON"
       success: (response) ->
         response.data.forEach (item) ->
-          state = map.data.getFeatureById($.trim(item[0]) + "")
           _updatedAccidentsCause(item)
 
   _updatedAccidentsCause = (item) ->
@@ -256,7 +317,7 @@ window.KR = do ->
     showRow = true
     showRow = false  if not feature.getProperty("value")? or isNaN(feature.getProperty("value"))
 
-    strokeWeight: 0.5
+    strokeWeight: 0
     strokeColor: "#fff"
     fillColor: colors[_getColor(feature.getProperty('value'))]
     fillOpacity: 0.5
@@ -304,13 +365,33 @@ window.KR = do ->
       $('.legend-list').append($(li))
       i++
 
+  _loadBarChart = (state) ->
+    nv.addGraph ->
+      chart = nv.models.discreteBarChart()
+        .x( (d) -> d.label)
+        .y( (d) -> d.value)
+        .staggerLabels(true)
+        .showValues(true)
+        .tooltips(true)
+        .showValues(true)
+        .transitionDuration(350)
+        .valueFormat(d3.format(','))
+
+      data = [
+        {
+          key: "Type of viehicle"
+          values: _.chain(accidentsVehicleType[state].values).sortBy((value) -> -value.value).value()
+        }
+      ]
+      console.log data
+      d3.select("#detailedVehicleChart svg").datum(data).call chart
+
   _loadPieChart = (state) ->
     nv.addGraph ->
       chart = nv.models.pieChart()
         .x( (d) -> d.label )
         .y( (d) -> parseInt(d.value) )
         .labelType("percent")
-        .showLabels(false)
         .valueFormat(d3.format(''))
         .tooltipContent( (key, y, e, graph) ->
           "<h3>#{key}</h3> <p>#{y}</p>"

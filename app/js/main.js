@@ -1,11 +1,12 @@
 (function() {
   'use strict';
   window.KR = (function() {
-    var accidentsSplit, accidentsSplitYear, accidents_in_2012, colors, featureOptions, generateScale, infoWindow, isLoaded, map, _clearHighlight, _getColor, _getRange, _gotoViz, _handleClickOnState, _handleClickOutState, _handleMouseOver, _hideLoader, _hideToolTip, _init, _initEventListners, _initMap, _loadAccidents2012Data, _loadLineChart, _loadPieChart, _loadSplitData, _setDisableStyle, _showContent, _showLoader, _showToolTip, _styleFeature, _updatedAccidentsCause, _updatedAccidentsPerYear;
+    var accidentsSplit, accidentsSplitYear, accidentsVehicleType, accidents_in_2012, colors, featureOptions, generateScale, infoWindow, isLoaded, map, _clearHighlight, _getColor, _getRange, _gotoViz, _handleClickOnState, _handleClickOutState, _handleMouseOver, _hideLoader, _highlightState, _init, _initEventListners, _initMap, _loadAccidents2012Data, _loadBarChart, _loadLineChart, _loadPieChart, _loadSplitData, _loadVehicleTypeData, _setDisableStyle, _showContent, _showLoader, _showToolTip, _styleFeature, _unHighlightState, _updatedAccidentsCause, _updatedAccidentsPerYear, _updatedVehicleType;
     map = null;
     accidents_in_2012 = [];
     accidentsSplitYear = [];
     accidentsSplit = [];
+    accidentsVehicleType = [];
     isLoaded = false;
     infoWindow = new google.maps.InfoWindow({
       content: ""
@@ -97,6 +98,7 @@
       return google.maps.event.addListenerOnce(map.data, "addfeature", function() {
         _loadAccidents2012Data();
         _loadSplitData();
+        _loadVehicleTypeData();
         isLoaded = true;
         _hideLoader();
         _showContent();
@@ -106,16 +108,19 @@
       return $('.legend-list li').removeClass('active');
     };
     _handleClickOnState = function(event) {
+      var color;
       if (!event.feature.getProperty('state')) {
         map.data.forEach(function(_feature) {
           return _feature.removeProperty('state');
         });
         map.data.setStyle(_setDisableStyle);
         map.data.revertStyle();
+        color = colors[_getColor(event.feature.getProperty('value'))];
         map.data.overrideStyle(event.feature, {
           fillOpacity: 1,
           strokeWeight: 2,
-          strokeColor: '#000'
+          strokeColor: '#fff',
+          fillColor: color
         });
         _handleMouseOver(event);
         return event.feature.setProperty("state", "active");
@@ -137,17 +142,33 @@
       $('.accidents_2012').text(accidentsIn2012);
       $('.accidents_2012_total').text(accidentsIn2012Total);
       _loadLineChart(currentState);
-      return _loadPieChart(currentState);
+      _loadPieChart(currentState);
+      return _loadBarChart(currentState);
     };
     _handleClickOutState = function(event) {
       event.feature.setProperty("state", "normal");
       return _clearHighlight();
     };
     _initEventListners = function() {
+      map.data.addListener("mouseover", _highlightState);
       map.data.addListener('click', _handleClickOnState);
-      return map.data.addListener('mouseout', _hideToolTip);
+      return map.data.addListener('mouseout', _unHighlightState);
     };
-    _hideToolTip = function() {};
+    _highlightState = function(event) {
+      var color;
+      color = colors[_getColor(event.feature.getProperty('value'))];
+      return map.data.overrideStyle(event.feature, {
+        fillOpacity: 1,
+        strokeWeight: 1,
+        strokeColor: '#eee',
+        fillColor: color
+      });
+    };
+    _unHighlightState = function(event) {
+      if (event.feature.getProperty('state') !== 'active') {
+        return map.data.revertStyle(event.feature);
+      }
+    };
     _showToolTip = function(event) {
       var anchor;
       map.data.overrideStyle(event.feature, {
@@ -159,13 +180,59 @@
       anchor.set("position", event.latLng);
       return infoWindow.open(map, anchor);
     };
-    _loadSplitData = function(state) {
+    _loadVehicleTypeData = function(state) {
+      return $.ajax({
+        url: "data/total-accidents-vehicle.json",
+        dataType: "JSON",
+        success: function(response) {
+          return response.data.forEach(function(item) {
+            return _updatedVehicleType(item);
+          });
+        }
+      });
+    };
+    _updatedVehicleType = function(item) {
+      return accidentsVehicleType[$.trim(item[0]) + ""] = {
+        key: $.trim(item[0]) + "",
+        values: [
+          {
+            label: "Two-Wheelers",
+            icon: "bike.svg",
+            value: parseInt(item[1])
+          }, {
+            label: "Auto-Rickshaws",
+            icon: "auto.svg",
+            value: parseInt(item[5])
+          }, {
+            label: "Cars, Jeeps, Taxis",
+            icon: "car.svg",
+            value: parseInt(item[9])
+          }, {
+            label: "Buses",
+            icon: "buse.svg",
+            value: parseInt(item[13])
+          }, {
+            label: "Trucks, Tempos, MAVs, Tractors",
+            icon: "truck.svg",
+            value: parseInt(item[17])
+          }, {
+            label: "Other Motor Vehicles",
+            icon: "other.svg",
+            value: parseInt(item[21])
+          }, {
+            label: "Other Vehicles/Objects",
+            icons: "othreother.svg",
+            value: parseInt(item[25])
+          }
+        ]
+      };
+    };
+    _loadSplitData = function() {
       return $.ajax({
         url: "data/accident-cause-2012.json",
         dataType: "JSON",
         success: function(response) {
           return response.data.forEach(function(item) {
-            state = map.data.getFeatureById($.trim(item[0]) + "");
             return _updatedAccidentsCause(item);
           });
         }
@@ -248,7 +315,7 @@
         showRow = false;
       }
       return {
-        strokeWeight: 0.5,
+        strokeWeight: 0,
         strokeColor: "#fff",
         fillColor: colors[_getColor(feature.getProperty('value'))],
         fillOpacity: 0.5,
@@ -302,6 +369,26 @@
       }
       return _results;
     };
+    _loadBarChart = function(state) {
+      return nv.addGraph(function() {
+        var chart, data;
+        chart = nv.models.discreteBarChart().x(function(d) {
+          return d.label;
+        }).y(function(d) {
+          return d.value;
+        }).staggerLabels(true).showValues(true).tooltips(true).showValues(true).transitionDuration(350).valueFormat(d3.format(','));
+        data = [
+          {
+            key: "Type of viehicle",
+            values: _.chain(accidentsVehicleType[state].values).sortBy(function(value) {
+              return -value.value;
+            }).value()
+          }
+        ];
+        console.log(data);
+        return d3.select("#detailedVehicleChart svg").datum(data).call(chart);
+      });
+    };
     _loadPieChart = function(state) {
       return nv.addGraph(function() {
         var chart;
@@ -309,7 +396,7 @@
           return d.label;
         }).y(function(d) {
           return parseInt(d.value);
-        }).labelType("percent").showLabels(false).valueFormat(d3.format('')).tooltipContent(function(key, y, e, graph) {
+        }).labelType("percent").valueFormat(d3.format('')).tooltipContent(function(key, y, e, graph) {
           return "<h3>" + key + "</h3> <p>" + y + "</p>";
         });
         d3.select("#detailedSplitChart svg").datum(accidentsSplit[state].values).call(chart);
