@@ -10,6 +10,7 @@
     <!-- build:css(.) styles/vendor.css -->
     <!-- bower:css -->
     <link rel="stylesheet" href="bower_components/bootstrap/dist/css/bootstrap.css" />
+    <link rel="stylesheet" href="bower_components/nvd3/src/nv.d3.css" />
     <!-- endbower -->
     <!-- endbuild -->
     <!-- build:css(.tmp) styles/main.css -->
@@ -62,7 +63,7 @@
           </div>
 
           <div class="detailed-chart-vehicle">
-            <h4 class="chart-title"><strong> </strong></h4>
+            <h4 class="chart-title"><strong> Accidents by vehicle type in year 2012 </strong></h4>
             <div id="detailedVehicleChart"><svg></svg></div>
           </div>
           <div class="detailed-split-chart">
@@ -81,7 +82,7 @@
           <div class="rect4"></div>
           <div class="rect5"></div>
         </div>
-        <p>Pulling data from a huge file, please give me fue moments!!</p>
+        <p>Pulling data from a huge file, please give me few moments!!</p>
       </div>
       <div class="intro">
         <h1> Road Accidents in India</h1>
@@ -90,16 +91,16 @@
         <p>India has one of the largest road network in the world. However, Road safety is an issue of national concern. Surge in population and motorization in the country along with expansion of road network contributes to the number of road accidents, injuries and fatalities.</p>
         <br>
         <h2 class="intro-heading">Goal</h2>
-        <p>I tried to visulize various dimensions and magnitude of road accidents in India. This visulization will help to create awareness and assist in decision making in the area of road safety. I hope, this interactive visluzaiton would be useful for policy makers, citizens, and civil society organizations working In areas that have an influence on road safety.</p>
+        <p>I tried to visualize various dimensions and magnitude of road accidents in India. This visualization will help to create awareness and assist in decision making in the area of road safety. I hope, this interactive visualization would be useful for policy makers, citizens, and civil society organizations working In areas that have an influence on road safety.</p>
         <br>
         <h2 class="intro-heading">Data</h2>
-        <p> Most of the data used in this interactive visulization is take from the Indian government's open data website <a href="http://data.gov.in" target="_blank"> http://data.gov.in</a>.</p>
+        <p> Most of the data used in this interactive visualization is take from the Indian government's open data website <a href="http://data.gov.in" target="_blank"> http://data.gov.in</a>.</p>
         <br>
         <h2 class="intro-heading">Tools</h2>
         <p>This is built on Google maps and D3.js</p>
         <br>
         &nbsp;&nbsp;
-        <button class="gotoviz btn btn-info btn-lg" id="gotoviz">Go to visulization</button>
+        <button class="gotoviz btn btn-info btn-lg" id="gotoviz">Go to visualization</button>
         </p>
       </div>
     </div>
@@ -145,10 +146,11 @@
     <!-- bower:js -->
     <script src="bower_components/jquery/dist/jquery.js"></script>
     <script src="bower_components/d3/d3.js"></script>
+    <script src="bower_components/angular/angular.js"></script>
     <script src="bower_components/topojson/topojson.js"></script>
     <script src="bower_components/datamaps/dist/datamaps.all.js"></script>
     <script src="bower_components/underscore/underscore.js"></script>
-    <script src="bower_components/pleasejs/dist/Please.js"></script>
+    <script src="bower_components/pleasejs/Please.js"></script>
     <script src="bower_components/nvd3/nv.d3.js"></script>
     <!-- endbower -->
     <!-- endbuild -->

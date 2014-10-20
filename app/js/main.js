@@ -200,29 +200,25 @@
             icon: "bike.svg",
             value: parseInt(item[1])
           }, {
-            label: "Auto-Rickshaws",
-            icon: "auto.svg",
-            value: parseInt(item[5])
-          }, {
             label: "Cars, Jeeps, Taxis",
             icon: "car.svg",
             value: parseInt(item[9])
           }, {
-            label: "Buses",
-            icon: "buse.svg",
-            value: parseInt(item[13])
-          }, {
-            label: "Trucks, Tempos, MAVs, Tractors",
-            icon: "truck.svg",
-            value: parseInt(item[17])
+            label: "Auto-Rickshaws",
+            icon: "auto.svg",
+            value: parseInt(item[5])
           }, {
             label: "Other Motor Vehicles",
             icon: "other.svg",
             value: parseInt(item[21])
           }, {
-            label: "Other Vehicles/Objects",
-            icons: "othreother.svg",
-            value: parseInt(item[25])
+            label: "Trucks, Tempos, MAVs, Tractors",
+            icon: "truck.svg",
+            value: parseInt(item[17])
+          }, {
+            label: "Buses",
+            icon: "bus.svg",
+            value: parseInt(item[13])
           }
         ]
       };
@@ -373,16 +369,14 @@
       return nv.addGraph(function() {
         var chart, data;
         chart = nv.models.discreteBarChart().x(function(d) {
-          return d.label;
+          return d.icon;
         }).y(function(d) {
           return d.value;
-        }).staggerLabels(true).showValues(true).tooltips(true).showValues(true).transitionDuration(350).valueFormat(d3.format(','));
+        }).staggerLabels(true).showIcons(true).showValues(true).tooltips(false).showValues(true).transitionDuration(350).valueFormat(d3.format(','));
         data = [
           {
             key: "Type of viehicle",
-            values: _.chain(accidentsVehicleType[state].values).sortBy(function(value) {
-              return -value.value;
-            }).value()
+            values: accidentsVehicleType[state].values
           }
         ];
         console.log(data);

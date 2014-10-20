@@ -195,15 +195,12 @@ window.KR = do ->
     accidentsVehicleType[$.trim(item[0]) + ""] =
       key: $.trim(item[0]) + ""
       values: [
+
+
         {
           label: "Two-Wheelers"
           icon: "bike.svg"
           value: parseInt(item[1])
-        }
-        {
-          label: "Auto-Rickshaws"
-          icon: "auto.svg"
-          value: parseInt(item[5])
         }
         {
           label: "Cars, Jeeps, Taxis"
@@ -211,14 +208,9 @@ window.KR = do ->
           value: parseInt(item[9])
         }
         {
-          label: "Buses"
-          icon: "buse.svg"
-          value: parseInt(item[13])
-        }
-        {
-          label: "Trucks, Tempos, MAVs, Tractors"
-          icon: "truck.svg"
-          value: parseInt(item[17])
+          label: "Auto-Rickshaws"
+          icon: "auto.svg"
+          value: parseInt(item[5])
         }
         {
           label: "Other Motor Vehicles"
@@ -226,10 +218,20 @@ window.KR = do ->
           value: parseInt(item[21])
         }
         {
-          label: "Other Vehicles/Objects"
-          icons: "othreother.svg"
-          value: parseInt(item[25])
+          label: "Trucks, Tempos, MAVs, Tractors"
+          icon: "truck.svg"
+          value: parseInt(item[17])
         }
+        {
+          label: "Buses"
+          icon: "bus.svg"
+          value: parseInt(item[13])
+        }
+        # {
+        #   label: "Other Vehicles/Objects"
+        #   icons: "othreother.svg"
+        #   value: parseInt(item[25])
+        # }
       ]
 
   _loadSplitData = ->
@@ -368,11 +370,12 @@ window.KR = do ->
   _loadBarChart = (state) ->
     nv.addGraph ->
       chart = nv.models.discreteBarChart()
-        .x( (d) -> d.label)
+        .x( (d) -> d.icon)
         .y( (d) -> d.value)
         .staggerLabels(true)
+        .showIcons(true)
         .showValues(true)
-        .tooltips(true)
+        .tooltips(false)
         .showValues(true)
         .transitionDuration(350)
         .valueFormat(d3.format(','))
@@ -380,7 +383,7 @@ window.KR = do ->
       data = [
         {
           key: "Type of viehicle"
-          values: _.chain(accidentsVehicleType[state].values).sortBy((value) -> -value.value).value()
+          values: accidentsVehicleType[state].values # _.chain(accidentsVehicleType[state].values).sortBy((value) -> -value.value).value()
         }
       ]
       console.log data
