@@ -1,7 +1,7 @@
 (function() {
   'use strict';
   window.KR = (function() {
-    var accidentsSplit, accidentsSplitYear, accidentsVehicleType, accidents_in_2012, colors, featureOptions, generateScale, infoWindow, isLoaded, map, _clearHighlight, _getColor, _getRange, _gotoViz, _handleClickOnState, _handleClickOutState, _handleMouseOver, _hideLoader, _highlightState, _init, _initEventListners, _initMap, _loadAccidents2012Data, _loadBarChart, _loadLineChart, _loadPieChart, _loadSplitData, _loadVehicleTypeData, _setDisableStyle, _showContent, _showLoader, _showToolTip, _styleFeature, _unHighlightState, _updatedAccidentsCause, _updatedAccidentsPerYear, _updatedVehicleType;
+    var accidentsSplit, accidentsSplitYear, accidentsVehicleType, accidents_in_2012, colors, featureOptions, generateScale, infoWindow, isLoaded, map, _clearHighlight, _generateBarChartLegend, _getColor, _getRange, _gotoViz, _handleClickOnState, _handleClickOutState, _handleMouseOver, _hideLoader, _highlightState, _init, _initEventListners, _initMap, _loadAccidents2012Data, _loadBarChart, _loadLineChart, _loadPieChart, _loadSplitData, _loadVehicleTypeData, _setDisableStyle, _showContent, _showLoader, _showToolTip, _styleFeature, _unHighlightState, _updatedAccidentsCause, _updatedAccidentsPerYear, _updatedVehicleType;
     map = null;
     accidents_in_2012 = [];
     accidentsSplitYear = [];
@@ -188,9 +188,10 @@
         url: "data/total-accidents-vehicle.json",
         dataType: "JSON",
         success: function(response) {
-          return response.data.forEach(function(item) {
+          response.data.forEach(function(item) {
             return _updatedVehicleType(item);
           });
+          return _generateBarChartLegend();
         }
       });
     };
@@ -354,6 +355,19 @@
     };
     _getRange = function() {
       return d3.scale.quantile().domain(accidents_in_2012).range(d3.range(8)).quantiles();
+    };
+    _generateBarChartLegend = function() {
+      var i, li, lis, range, _results;
+      i = 0;
+      range = accidentsVehicleType['Andhra Pradesh'].values;
+      lis = '';
+      _results = [];
+      while (i < range.length) {
+        li = "<li>\n  <img src='images/icons/" + range[i].icon + "' alt=\"\">\n  <span>" + range[i].label + "</span>\n</li>";
+        $('.vehicle-legend').append($(li));
+        _results.push(i++);
+      }
+      return _results;
     };
     generateScale = function() {
       var i, li, lis, range, _results;

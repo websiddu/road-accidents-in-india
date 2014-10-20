@@ -193,13 +193,12 @@ window.KR = do ->
       success: (response) ->
         response.data.forEach (item) ->
           _updatedVehicleType(item)
+        _generateBarChartLegend()
 
   _updatedVehicleType = (item) ->
     accidentsVehicleType[$.trim(item[0]) + ""] =
       key: $.trim(item[0]) + ""
       values: [
-
-
         {
           label: "Two-Wheelers"
           icon: "bike.svg"
@@ -355,6 +354,21 @@ window.KR = do ->
 
   _getRange = ->
     d3.scale.quantile().domain(accidents_in_2012).range(d3.range(8)).quantiles()
+
+  _generateBarChartLegend = ->
+    i = 0
+    range = accidentsVehicleType['Andhra Pradesh'].values
+    lis = ''
+    while i < range.length
+      li = """
+        <li>
+          <img src='images/icons/#{range[i].icon}' alt="">
+          <span>#{range[i].label}</span>
+        </li>
+      """
+      $('.vehicle-legend').append($(li))
+      i++
+
 
   generateScale = ->
     i = 0

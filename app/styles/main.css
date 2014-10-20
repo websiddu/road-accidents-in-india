@@ -869,7 +869,7 @@ body {
 }
 
 .detailed-chart-vehicle svg {
-  height: 300px;
+  height: 230px;
   width: 460px;
 }
 
@@ -1036,5 +1036,19 @@ header h1 {
 .inner-loader p {
   font-size: 20px;
   text-align: center;
+}
+
+.vehicle-legend {
+  margin-left: 35px;
+}
+
+.vehicle-legend li {
+  margin-bottom: 10px;
+}
+
+.vehicle-legend li img {
+  height: 28px;
+  width: 28px;
+  margin-right: 10px;
 }
 
