@@ -60,7 +60,6 @@
     };
     _showContent = function() {
       $('.legend').removeClass('hide').addClass('fadeInUpBig');
-      $('.details').removeClass('hide').addClass('fadeInRightBig');
       return $('header').removeClass('hide').addClass('fadeInDownBig');
     };
     _gotoViz = function() {
@@ -109,6 +108,10 @@
     };
     _handleClickOnState = function(event) {
       var color;
+      if (!$('.details').hasClass('fadeInRightBig')) {
+        $('.details').removeClass('hide').addClass('fadeInRightBig');
+      }
+      $('.details-empty').hide();
       if (!event.feature.getProperty('state')) {
         map.data.forEach(function(_feature) {
           return _feature.removeProperty('state');

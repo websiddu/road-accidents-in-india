@@ -873,6 +873,12 @@ body {
   width: 460px;
 }
 
+.details-empty {
+  position: fixed;
+  top: 263px;
+  right: 85px;
+}
+
 .detailed-chart {
   width: 100%;
   height: 250px;

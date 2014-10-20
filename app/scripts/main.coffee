@@ -69,7 +69,6 @@ window.KR = do ->
 
   _showContent = ->
     $('.legend').removeClass('hide').addClass('fadeInUpBig')
-    $('.details').removeClass('hide').addClass('fadeInRightBig')
     $('header').removeClass('hide').addClass('fadeInDownBig')
 
   _gotoViz = ->
@@ -122,6 +121,10 @@ window.KR = do ->
     $('.legend-list li').removeClass('active')
 
   _handleClickOnState = (event) ->
+    unless $('.details').hasClass('fadeInRightBig')
+      $('.details').removeClass('hide').addClass('fadeInRightBig')
+    $('.details-empty').hide()
+
     unless event.feature.getProperty 'state'
       map.data.forEach (_feature) ->
         _feature.removeProperty('state')
