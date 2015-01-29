@@ -170,7 +170,7 @@ window.KR = do ->
 
   _highlightState = (event) ->
     color = colors[_getColor(event.feature.getProperty('value'))]
-    map.data.overrideStyle(event.feature, {fillOpacity: 1, strokeWeight: 1, strokeColor: '#eee', fillColor: color})
+    map.data.overrideStyle(event.feature, {fillOpacity: 1, strokeWeight: 3, strokeColor: '#eee', fillColor: color})
 
   _unHighlightState = (event) ->
     unless event.feature.getProperty('state') is 'active'

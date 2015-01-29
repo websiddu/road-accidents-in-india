@@ -162,7 +162,7 @@
       color = colors[_getColor(event.feature.getProperty('value'))];
       return map.data.overrideStyle(event.feature, {
         fillOpacity: 1,
-        strokeWeight: 1,
+        strokeWeight: 3,
         strokeColor: '#eee',
         fillColor: color
       });
